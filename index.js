@@ -19,19 +19,36 @@ const io = require('socket.io')(server, {
     },
 });
 
+const allUser = [];
 // Serve the index.html file
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
+app.get('/user', (req, res) => {
+    res.json({
+        users : allUser,
+        status : 200,
+    });
+});
 
-const allUser = [];
 
 // Socket connection handling
+// console.log();
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
     
     socket.on('disconnect', (reason) => {
         console.log('User disconnected:', socket.id, 'Reason:', reason);
+        
+        // send all user
+
+      
+        socket.emit("user",allUser);
+        
+  
+
+    
+        // Remove the disconnected user from the list of all users
         allUser.forEach((user, index) => {
             if(user.id === socket.id){
                 allUser.splice(index, 1);
@@ -50,7 +67,7 @@ io.on('connection', (socket) => {
         io.emit('allUsers', allUser);
     });
    
-
+   
    
 });
 
