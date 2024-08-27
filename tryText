@@ -1,0 +1,82 @@
+const express = require('express');
+const { ExpressPeerServer } = require('peer');
+const cors = require('cors');
+const http = require('http');
+const app = express();
+const WebSocket = require('ws');
+app.use(cors(
+    {
+        origin: '*', // Adjust this to your specific needs
+        methods: ['GET', 'POST'],
+    }
+));
+app.use(express.json());
+
+const PORT = process.env.PORT || 9000
+
+
+
+
+// Create an Express server
+const server = http.createServer(app);
+  const appServer = app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+// Create a PeerJS server
+const peerServer = ExpressPeerServer(appServer, {
+  debug: true,
+  path: '/'
+});
+// Create a WebSocket server using the same HTTP server
+const wss = new WebSocket.Server({ ser appServer });
+// Use the PeerJS server in your Express app
+app.use('/peerjs', peerServer);
+
+// Track connected users
+let allUsers = [];
+
+// Function to read users from the JSON file
+// Listen for new connections
+// Track connected users
+const connectedUsers = new Set();
+
+peerServer.on('connection', (client) => {
+  console.log(`New user connected with ID: ${client.id}`);
+  connectedUsers.add(client.id);
+  allUsers.push(client.id);
+  
+});
+
+peerServer.on('disconnect', (client) => {
+  console.log(`User disconnected with ID: ${client.id}`);
+  connectedUsers.delete(client.id);
+  allUsers = allUsers.filter((user) => user!== client.id);
+  // Optionally, perform additional cleanup or notifications
+});
+
+
+// Serve the index.html file
+app.get('/', (req, res) => {
+  res.send(allUsers)
+});
+
+wss.on('connection', (ws) => {
+  console.log('WebSocket client connected');
+  ws.send(JSON.stringify({ type: 'user_list', users: Array.from(connectedUsers) }));
+
+  ws.on('message', (message) => {
+    const data = JSON.parse(message);
+    if (data.type === 'send_data') {
+      console.log(`Received data from client: ${data.payload}`);
+    }
+  });
+
+  ws.on('close', () => {
+    console.log('WebSocket client disconnected');
+  });
+});
+  
+
+// app.listen(PORT, () => {
+//   console.log(`Server running on port ${PORT}`);
+// });

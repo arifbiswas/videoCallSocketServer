@@ -1,61 +1,82 @@
 const express = require('express');
-const { ExpressPeerServer } = require('peer');
+const http = require('http');
+const socketIo = require('socket.io');
+const { PeerServer } = require('peer');
 const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
+
+const PORT = process.env.PORT || 9090
+
 const app = express();
+const server = http.createServer(app);
 
-app.use(cors(
-    {
-        origin: '*', // Adjust this to your specific needs
-        methods: ['GET', 'POST'],
-    }
-));
-app.use(express.json());
-
-const PORT = process.env.PORT || 9000
-
-// Create an Express server
-const server = app.listen(PORT, () => {
-  console.log('PeerJS server running on [~~ http://localhost:9000 ~~]');
+const io = socketIo(server, {
+  cors: {
+    origin: "*", // Your client URL
+    methods: ["GET", "POST"]
+  }
 });
 
-// Create a PeerJS server
-const peerServer = ExpressPeerServer(server, {
-  debug: true,
-  path: '/'
-});
+app.use(cors());
 
-// Use the PeerJS server in your Express app
-app.use('/peerjs', peerServer);
 
-// Track connected users
-let allUsers = [];
 
-// Function to read users from the JSON file
-// Listen for new connections
-// Track connected users
-const connectedUsers = new Set();
+const peerServer = PeerServer({ port: PORT + 1, path: '/' });
+
+const allUser = [];
 
 peerServer.on('connection', (client) => {
-  console.log(`New user connected with ID: ${client.id}`);
-  connectedUsers.add(client.id);
-  allUsers.push(client.id);
+  // console.log(`New user connected with ID: ${client.id}`);
+});
+
+
+// Socket connection handling
+// console.log();
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
   
-});
-
-peerServer.on('disconnect', (client) => {
-  console.log(`User disconnected with ID: ${client.id}`);
-  connectedUsers.delete(client.id);
-  allUsers = allUsers.filter((user) => user!== client.id);
-  // Optionally, perform additional cleanup or notifications
-});
-
-
-// Serve the index.html file
-app.get('/', (req, res) => {
-  res.send(allUsers)
-});
-
-
+  socket.on('disconnect', (reason) => {
+      console.log('User disconnected:', socket.id, 'Reason:', reason);
+      // send all user
+      socket.emit("user",allUser);
+      // Remove the disconnected user from the list of all users
+      allUser.forEach((user, index) => {
+          if(user.id === socket.id){
+              allUser.splice(index, 1);
+          }
+      });
+  });
   
+  socket.on('error', (error) => {
+      console.error('Socket error:', error);
+  });
+
+  socket.on('login', (id) => {
+    console.log('User logged in:', id);
+  
+    // Check if the callerID already exists
+    const userExists = allUser.some(user => user.callerID === id);
+  
+    if (!userExists) {
+      // If the callerID does not exist, add the new user
+      allUser.push({ callerID: id, id: socket.id });
+      // console.log('User added:', { callerID: id, id: socket.id });
+    } else {
+      console.log('User already exists, not adding again:', id);
+    }
+  
+    // Emit the updated list of users
+    io.emit('user', allUser);
+  });
+ 
+ 
+ 
+
+ 
+ 
+
+
+
+});
+server.listen(PORT, () => {
+  console.log('Server [socket , peer] is running on' + " " + [PORT , PORT+1]);
+});
