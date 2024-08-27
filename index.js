@@ -8,8 +8,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const PORT = process.env.PORT || 9000
+
 // Create an Express server
-const server = app.listen(9000, () => {
+const server = app.listen(PORT, () => {
   console.log('PeerJS server running on [~~ http://localhost:9000 ~~]');
 });
 
