@@ -5,7 +5,12 @@ const path = require('path');
 const fs = require('fs');
 const app = express();
 
-app.use(cors());
+app.use(cors(
+    {
+        origin: '*', // Adjust this to your specific needs
+        methods: ['GET', 'POST'],
+    }
+));
 app.use(express.json());
 
 const PORT = process.env.PORT || 9000
