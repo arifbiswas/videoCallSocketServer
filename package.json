@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon index.js",
-    "start": "node index.js"
+    "dev_mobile": "nodemon index.mobile.js",
+    "dev_web": "nodemon index.web.js",
+    "start_mobile": "node index.mobile.js",
+    "start_dev": "node index.web.js"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +15,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "node-turn": "^0.0.6",
     "nodemon": "^3.1.4",
     "peer": "^1.0.2",
     "socket.io": "^4.7.5",

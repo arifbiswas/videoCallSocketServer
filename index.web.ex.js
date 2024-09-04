@@ -3,7 +3,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const { PeerServer } = require('peer');
 const cors = require('cors');
-
+const Turn = require('node-turn');
 const PORT = process.env.PORT || 9090
 
 const app = express();
@@ -67,16 +67,23 @@ io.on('connection', (socket) => {
     // Emit the updated list of users
     io.emit('user', allUser);
   });
- 
- 
- 
-
- 
- 
-
-
-
 });
+
+// Set up TURN server with node-turn
+const turnServer = new Turn({
+  authMech: 'long-term',  // TURN authentication mechanism
+  credentials: {
+    username: "123456" , // Replace with your credentials
+    password: "123456"  // Replace with your credentials
+  },
+  listeningPort: PORT + 2,  // Set TURN server port
+  debugLevel: 'INFO'  // Debugging level (can be set to 'OFF' to disable logging)
+});
+
+turnServer.start();
+
+// Start the server
 server.listen(PORT, () => {
-  console.log('Server [socket , peer] is running on' + " " + [PORT , PORT+1]);
+  console.log('3 Server [Socket , Peer, Stun] is running on' + " " + [PORT , PORT + 1,PORT + 2]);
+  console.log('TURN server is running on port ' + (PORT + 2));
 });
